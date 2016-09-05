@@ -49,3 +49,10 @@ plot(a, main = ll0, cex.main = cm)
 llgridlines(a, side = "EN")
 
 
+## ------------------------------------------------------------------------
+laea0 <- sprintf("+proj=laea +ellps=WGS84 +over +lon_0=%i +lat_0=%i", 
+               xcen(dat1), ycen(dat1))
+b <- spTransform(countriesHigh, laea0)
+plot(b, main = laea0, cex.main = cm)
+llgridlines(b)
+
