@@ -21,4 +21,4 @@ Just some R vignettes.
 
 See the site: https://mdsumner.github.io/oddhack/
 
-(Built with (https://github.com/hadley/staticdocs)[staticdocs]). 
+(Built with [staticdocs](https://github.com/hadley/staticdocs)). 
