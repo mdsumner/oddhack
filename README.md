@@ -1,8 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-[![Travis-CI Build Status](https://travis-ci.org/.svg?branch=master)](https://travis-ci.org/)
+[![Travis-CI Build Status](https://travis-ci.org/mdsumner/oddhack.svg?branch=master)](https://travis-ci.org/mdsumner/oddhack) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/mdsumner/oddhack?branch=master&svg=true)](https://ci.appveyor.com/project/mdsumner/oddhack)
 
 oddhack
 -------
 
 Just some R vignettes.
+
+See the site: <https://mdsumner.github.io/oddhack/>
+
+(Built with (<https://github.com/hadley/staticdocs>)\[staticdocs\]).
