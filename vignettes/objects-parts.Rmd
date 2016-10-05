@@ -109,4 +109,15 @@ text(state_centroids, lab = state_centroids$state_name, cex = 0.7)
 ```
 
 
+Another way forward is to decompose to tidy data and do the calculations yourself, this seems ok since centroid is really a simple one if you only want the "box centroid". 
+
+```{r}
+library(spbabel) ## use sptable (could also use ggplot2::fortify)
+library(dplyr)
+usc$object_ <- seq(nrow(usc))
+state_centroids2 <- sptable(usc) %>%  inner_join(as.data.frame(usc[, c("object_", "state_name")])) %>% group_by(state_name) %>% summarize(centroidX = mean(x_), centroidY = mean(y_)) 
+library(ggplot2)
+ggplot(state_centroids2) + aes(x = centroidX, y = centroidY, label = state_name) + geom_text()
 ```
+
+
