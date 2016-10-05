@@ -25,6 +25,5 @@ devtools::check()
 # The above will also run the unit tests using testthat
 # devtools::test()
 
-pkgdown::build_site()
-# Good practice (@MangoTheCat)
+pkgdown::build_sit# Good practice (@MangoTheCat)
 #goodpractice::gp()

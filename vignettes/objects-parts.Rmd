@@ -31,7 +31,7 @@ prj <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +
 usc <- spTransform(us_counties(), prj)
 set.seed(1)
 usc$colour <- sample(viridis(nrow(usc)))
-par(mar = rep(0, 4))
+
 plot(usc, col = usc$colour)
 ```
 
@@ -39,14 +39,24 @@ Every individually coloured region is an "object", a.k.a. a "feature", or a "mul
 
 The first, up one level, is the U.S. state, see the larger collections of counties into states, although each county is still demarked by its boundary. 
 
+```{r,echo=FALSE}
+par(mar = rep(0, 4))
+```
+
 ```{r}
 usc$state_colour <- u_colours(usc$state_name)
+
 plot(usc, col = usc$state_colour)
 ```
 
 The second level is down to the individual polygon "parts" that we see as "islands" in its general meaning (although they may not actually be islands in the real world).
 
 We cannot get at these lower level entities without decomposing the data set. 
+
+```{r,echo=FALSE}
+par(mar = rep(0, 4))
+```
+
 
 ```{r}
 print(nrow(usc))
@@ -87,6 +97,10 @@ I don't think we care so much about properties on each part, though it would be 
 
 The `sp` family can be used to get the state-centroid from the component counties. Let's ignore the now the need to get an "inner centroid", i.e. one that actually falls inside a polygon part, rather than inside  a concavity or hole. 
 
+```{r,echo=FALSE}
+par(mar = rep(0, 4))
+```
+
 
 ```{r}
 states <- rgeos::gUnionCascaded(usc, usc$state_name)
@@ -99,6 +113,11 @@ plot(states, border = "lightgrey", add = TRUE)
 To do this though we've lost all of the interesting information, like what the state is! 
 
 Another way is to split the data set by state attribute and apply a "per data set" centroid calculation, but again it's a hassle to carry through the state id and recompose everything. 
+
+```{r,echo=FALSE}
+par(mar = rep(0, 4))
+```
+
 
 ```{r}
 state_centroids_list <- lapply(split(usc, usc$state_name), function(x) coordinates(rgeos::gCentroid(x)))

@@ -48,14 +48,15 @@ prj &lt;-<span class="st"> "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0
 usc &lt;-<span class="st"> </span><span class="kw">spTransform</span>(<span class="kw">us_counties</span>(), prj)
 <span class="kw">set.seed</span>(<span class="dv">1</span>)
 usc$colour &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">viridis</span>(<span class="kw">nrow</span>(usc)))
-<span class="kw">par</span>(<span class="dt">mar =</span> <span class="kw">rep</span>(<span class="dv">0</span>, <span class="dv">4</span>))
+
 <span class="kw">plot</span>(usc, <span class="dt">col =</span> usc$colour)</code></pre></div>
 <p><img src="objects-parts_files/figure-html/unnamed-chunk-1-1.png" width="672"></p>
 <p>Every individually coloured region is an &ldquo;object&rdquo;, a.k.a. a &ldquo;feature&rdquo;, or a &ldquo;multipolygon&rdquo;&ldquo;, it corresponds to a row in the <code>SpatialDataFrame</code> <code>usc</code>. There are at least two more hierarchical levels in this data set though.</p>
 <p>The first, up one level, is the U.S. state, see the larger collections of counties into states, although each county is still demarked by its boundary.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">usc$state_colour &lt;-<span class="st"> </span><span class="kw">u_colours</span>(usc$state_name)
+
 <span class="kw">plot</span>(usc, <span class="dt">col =</span> usc$state_colour)</code></pre></div>
-<p><img src="objects-parts_files/figure-html/unnamed-chunk-2-1.png" width="672"></p>
+<p><img src="objects-parts_files/figure-html/unnamed-chunk-3-1.png" width="672"></p>
 <p>The second level is down to the individual polygon &ldquo;parts&rdquo; that we see as &ldquo;islands&rdquo; in its general meaning (although they may not actually be islands in the real world).</p>
 <p>We cannot get at these lower level entities without decomposing the data set.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(<span class="kw">nrow</span>(usc))</code></pre></div>
@@ -66,7 +67,7 @@ dusc$part_colour &lt;-<span class="st"> </span><span class="kw">sample</span>(<s
 <span class="kw">print</span>(<span class="kw">nrow</span>(dusc))</code></pre></div>
 <pre><code>## [1] 3306</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(dusc, <span class="dt">col =</span> dusc$part_colour, <span class="dt">border =</span> <span class="ot">NA</span>)</code></pre></div>
-<p><img src="objects-parts_files/figure-html/unnamed-chunk-3-1.png" width="672"></p>
+<p><img src="objects-parts_files/figure-html/unnamed-chunk-5-1.png" width="672"></p>
 <p>There aren&rsquo;t very many counties that were composed of more than one single polygon, and this is mostly about the actual islands making up a single county. It is clear that each individual island along the chain of Alaskan islands is a separate differently-coloured <em>part</em>, although grouped as belonging to a single county - Aleutians West and Aleutians East. This grouping continues up the hierachy to membership within a single state.</p>
 <p>How do we get properties of these entities?</p>
 <p><code>coordinates</code> gives a &ldquo;whole feature&rdquo; centroid and <code>rgeos::gCentroid</code> gives a &ldquo;whole of data set&rdquo; centroid. (Note that these might not be the same <a href="https://en.wikipedia.org/wiki/Centroid">kind of centroid</a>, there are at least three kinds and of course the answer also depends on the coordinate system in use. There is a least &ldquo;box centroid&rdquo;, &ldquo;inner centroid&rdquo; and &ldquo;weighted centroid&rdquo; in common use, but there are others.)</p>
@@ -96,7 +97,7 @@ dusc$part_colour &lt;-<span class="st"> </span><span class="kw">sample</span>(<s
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">states &lt;-<span class="st"> </span>rgeos::<span class="kw">gUnionCascaded</span>(usc, usc$state_name)
 <span class="kw">plot</span>(rgeos::<span class="kw">gCentroid</span>(states, <span class="dt">byid =</span> <span class="ot">TRUE</span>))
 <span class="kw">plot</span>(states, <span class="dt">border =</span> <span class="st">"lightgrey"</span>, <span class="dt">add =</span> <span class="ot">TRUE</span>)</code></pre></div>
-<p><img src="objects-parts_files/figure-html/unnamed-chunk-7-1.png" width="672"></p>
+<p><img src="objects-parts_files/figure-html/unnamed-chunk-10-1.png" width="672"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## notice how coordinates and gcentroid are slightly different
 <span class="co"># points(coordinates(states), pch = "x")</span></code></pre></div>
 <p>To do this though we&rsquo;ve lost all of the interesting information, like what the state is!</p>
@@ -109,7 +110,7 @@ state_centroids &lt;-<span class="st"> </span><span class="kw">SpatialPointsData
 
 <span class="kw">plot</span>(state_centroids)
 <span class="kw">text</span>(state_centroids, <span class="dt">lab =</span> state_centroids$state_name, <span class="dt">cex =</span> <span class="fl">0.7</span>)</code></pre></div>
-<p><img src="objects-parts_files/figure-html/unnamed-chunk-8-1.png" width="672"></p>
+<p><img src="objects-parts_files/figure-html/unnamed-chunk-12-1.png" width="672"></p>
 <p>Another way forward is to decompose to tidy data and do the calculations yourself, this seems ok since centroid is really simple if you only want the &ldquo;box centroid&rdquo;.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(spbabel) ## use sptable (could also use ggplot2::fortify)
 <span class="kw">library</span>(dplyr)
@@ -118,7 +119,7 @@ state_centroids2 &lt;-<span class="st"> </span><span class="kw">sptable</span>(u
 <pre><code>## Joining, by = "object_"</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
 <span class="kw">ggplot</span>(state_centroids2) +<span class="st"> </span><span class="kw">aes</span>(<span class="dt">x =</span> centroidX, <span class="dt">y =</span> centroidY, <span class="dt">label =</span> state_name) +<span class="st"> </span><span class="kw">geom_text</span>()</code></pre></div>
-<p><img src="objects-parts_files/figure-html/unnamed-chunk-9-1.png" width="672"></p>
+<p><img src="objects-parts_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
   </div>
 
   <div class="col-md-3 hidden-xs">
