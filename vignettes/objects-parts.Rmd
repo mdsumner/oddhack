@@ -1,0 +1,112 @@
+---
+title: "Objects and parts in spatial"
+author: "Michael Sumner"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    fig_width: 7
+    fig_height: 7
+vignette: >
+  %\VignetteIndexEntry{objects_parts}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(sp)
+library(rgdal)
+library(viridis)
+library(USAboundaries)
+par(mar = rep(0, 4))
+```
+Vector spatial data can be complex, and sometimes convoluted. To introduce some terminology look at this map of USA counties. 
+
+```{r}
+library(USAboundaries)
+library(viridis)
+n_colours <- function(n) viridis(n)
+u_colours <- function(x) {f <- factor(x); n_colours(nlevels(f))[f]}
+prj <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+usc <- spTransform(us_counties(), prj)
+set.seed(1)
+usc$colour <- sample(viridis(nrow(usc)))
+par(mar = rep(0, 4))
+plot(usc, col = usc$colour)
+```
+
+Every individually coloured region is an "object", a.k.a. a "feature", or a "multipolygon"", it corresponds to a row in the `SpatialDataFrame`  `usc`. There are at least two more hierarchical levels in this data set though. 
+
+The first up one level is the U.S. state, see how we can easily see the larger collections of counties into states, although each county is still demarked by its boundary. 
+
+```{r}
+usc$state_colour <- u_colours(usc$state_name)
+plot(usc, col = usc$state_colour)
+```
+
+The second is down to the individual polygon "parts", that we see as "islands" although they may not actually be islands in the real world. 
+
+We cannot get at these lower level entities without decomposing the data set. 
+
+```{r}
+print(nrow(usc))
+
+dusc <- disaggregate(usc)
+set.seed(1)
+dusc$part_colour <- sample(u_colours(seq(nrow(dusc))))
+print(nrow(dusc))
+plot(dusc, col = dusc$part_colour, border = NA)
+```
+Now it's clear that each individual part along the chain of Alaskan islands is a separate part, although grouped as belonging to a single county - Aleutians West and Aleutians East (and up the chain in a single state). 
+
+How do we get properties of these entities? 
+
+`coordinates` gives a "whole feature" centroid and `rgeos::gCentroid` give s a "whole of data set" centroid. Note that these might not be the same kind of centroid as well. 
+
+```{r}
+dim(coordinates(usc))
+rgeos::gCentroid(usc)
+```
+
+To get a "whole feature" centroid from rgeos we need the `byid` argument. 
+
+```{r}
+length(rgeos::gCentroid(usc, byid = TRUE))
+```
+
+To get it only per "part" use disaggregate. 
+
+```{r}
+length(rgeos::gCentroid(disaggregate(usc), byid = TRUE))
+```
+
+What about in groups of features? Our states are groups of counties, and interestingly we'd like to store attribute information per county (I don't think we care so much about each part a county has) and so why not nominate the objects to be states, and the parts to be counties? (This is **not** how GIS works so park this thought.)
+
+The `sp` family can be used to get the state-centroid from the component counties. Let's ignore the now the need to get an "inner centroid", i.e. one that actually falls inside a polygon part, rather than inside  a concavity or hole. 
+
+
+```{r}
+states <- rgeos::gUnionCascaded(usc, usc$state_name)
+plot(rgeos::gCentroid(states, byid = TRUE))
+plot(states, border = "lightgrey", add = TRUE)
+## notice how coordinates and gcentroid are slightly different
+# points(coordinates(states), pch = "x")
+```
+
+To do this though we've lost all of the interesting information, like what the state is! 
+
+Another way is to split the data set by state attribute and apply a "per data set" centroid calculation, but again it's a hassle to carry through the state id and recompose everything. 
+
+```{r}
+state_centroids_list <- lapply(split(usc, usc$state_name), function(x) coordinates(rgeos::gCentroid(x)))
+state_centroids <- do.call(rbind, state_centroids_list)
+row.names(state_centroids) <- NULL
+state_centroids <- SpatialPointsDataFrame(state_centroids, data.frame(state_name = names(state_centroids_list), stringsAsFactors = FALSE), proj4string = CRS(proj4string(usc)), 
+                                          match.ID = FALSE)
+
+plot(state_centroids)
+text(state_centroids, lab = state_centroids$state_name, cex = 0.7)
+```
+
+
+```
