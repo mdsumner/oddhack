@@ -1,5 +1,5 @@
 ---
-title: "Objects and parts in spatial"
+title: "Spatial Objects and Parts"
 author: "Michael Sumner"
 date: "`r Sys.Date()`"
 output:
@@ -37,14 +37,14 @@ plot(usc, col = usc$colour)
 
 Every individually coloured region is an "object", a.k.a. a "feature", or a "multipolygon"", it corresponds to a row in the `SpatialDataFrame`  `usc`. There are at least two more hierarchical levels in this data set though. 
 
-The first up one level is the U.S. state, see how we can easily see the larger collections of counties into states, although each county is still demarked by its boundary. 
+The first, up one level, is the U.S. state, see the larger collections of counties into states, although each county is still demarked by its boundary. 
 
 ```{r}
 usc$state_colour <- u_colours(usc$state_name)
 plot(usc, col = usc$state_colour)
 ```
 
-The second is down to the individual polygon "parts", that we see as "islands" although they may not actually be islands in the real world. 
+The second level is down to the individual polygon "parts" that we see as "islands" in its general meaning (although they may not actually be islands in the real world).
 
 We cannot get at these lower level entities without decomposing the data set. 
 
@@ -57,18 +57,19 @@ dusc$part_colour <- sample(u_colours(seq(nrow(dusc))))
 print(nrow(dusc))
 plot(dusc, col = dusc$part_colour, border = NA)
 ```
-Now it's clear that each individual part along the chain of Alaskan islands is a separate part, although grouped as belonging to a single county - Aleutians West and Aleutians East (and up the chain in a single state). 
+
+There aren't very many counties that were composed of more than one single polygon, and this is mostly about the actual islands making up a single county. It is clear that each individual island along the chain of Alaskan islands is a separate differently-coloured *part*, although grouped as belonging to a single county - Aleutians West and Aleutians East. This grouping continues up the hierachy to membership within a single state. 
 
 How do we get properties of these entities? 
 
-`coordinates` gives a "whole feature" centroid and `rgeos::gCentroid` give s a "whole of data set" centroid. Note that these might not be the same kind of centroid as well. 
+`coordinates` gives a "whole feature" centroid and `rgeos::gCentroid` gives a "whole of data set" centroid. (Note that these might not be the same [kind of centroid](https://en.wikipedia.org/wiki/Centroid), there are at least three kinds and of course the answer also depends on the coordinate system in use. There is a least "box centroid", "inner centroid" and "weighted centroid" in common use, but there are others.)
 
 ```{r}
 dim(coordinates(usc))
 rgeos::gCentroid(usc)
 ```
 
-To get a "whole feature" centroid from rgeos we need the `byid` argument. 
+To get a "whole feature" centroid from `rgeos` we need the `byid` argument. 
 
 ```{r}
 length(rgeos::gCentroid(usc, byid = TRUE))
@@ -80,7 +81,9 @@ To get it only per "part" use disaggregate.
 length(rgeos::gCentroid(disaggregate(usc), byid = TRUE))
 ```
 
-What about in groups of features? Our states are groups of counties, and interestingly we'd like to store attribute information per county (I don't think we care so much about each part a county has) and so why not nominate the objects to be states, and the parts to be counties? (This is **not** how GIS works so park this thought.)
+What about in groups of features? Our states are groups of counties, and interestingly we'd like to store attribute information per county and so why not nominate the objects to be states, and the parts to be counties? 
+
+I don't think we care so much about properties on each part, though it would be nice to be able to tabulate parts per county and their sizes etc. This is **not** how GIS works so park this thought. (To do this properly we need to decompose these objects into **primitives** rather than components of **simple features**. This is partly fleshed out in the [rangl package](https://github.com/r-gris/rangl/).)
 
 The `sp` family can be used to get the state-centroid from the component counties. Let's ignore the now the need to get an "inner centroid", i.e. one that actually falls inside a polygon part, rather than inside  a concavity or hole. 
 
@@ -109,7 +112,7 @@ text(state_centroids, lab = state_centroids$state_name, cex = 0.7)
 ```
 
 
-Another way forward is to decompose to tidy data and do the calculations yourself, this seems ok since centroid is really a simple one if you only want the "box centroid". 
+Another way forward is to decompose to tidy data and do the calculations yourself, this seems ok since centroid is really simple if you only want the "box centroid". 
 
 ```{r}
 library(spbabel) ## use sptable (could also use ggplot2::fortify)
